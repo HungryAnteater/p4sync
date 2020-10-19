@@ -1,0 +1,20 @@
+# Visual Studio Stuff
+.vs/
+*.suo
+*.user
+*.pch
+*.db
+
+# Intermediate and Binary Output
+_int/
+_bin/
+
+# Compile Timing Log Output
+timings.txt
+
+# Common Binary Formats
+*.a
+*.lib
+*.dll
+*.exe
+*.app
