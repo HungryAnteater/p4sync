@@ -7,6 +7,7 @@
 #include <cstdarg>
 #include <vector>
 #include <string>
+#include <fstream>
 #include <mutex>
 #include <unordered_map>
 #define WIN32_LEAN_AND_MEAN
@@ -82,7 +83,8 @@ string get_temp_path()
    return path;
 }
 
-const string starting_dir = "//metr/Game/Main/"s;
+constexpr auto settings_path = "settings.txt";
+string depot_root;
 vector<string> work;
 atomic<int> work_total = 0;
 atomic<int> work_index = 0;
@@ -172,6 +174,28 @@ int main(int argc, char* argv[])
 {
    int num_threads = 8;
    vector<string> dirs_to_sync;
+   bool reinit_settings = false;
+
+   try
+   {
+      ifstream settings(settings_path);
+      if (settings)
+         settings >> depot_root;
+      else
+         reinit_settings = true;
+   }
+   catch (const ifstream::failure& e)
+   {
+      print(red, "failed to load settings file: %s\n", e.what());
+      reinit_settings = true;
+   }
+
+   if (reinit_settings)
+   {
+      depot_root = "//";
+      ofstream settings(settings_path);
+      settings << depot_root;
+   }
 
    for (int i=1; i<argc; i++)
    {
@@ -183,11 +207,11 @@ int main(int argc, char* argv[])
          catch (const exception& e) { print(red, "Invalid value for num threads argument: %s\n", e.what()); }
       }
       else
-         dirs_to_sync.push_back(starting_dir + argv[i]);
+         dirs_to_sync.push_back(depot_root + argv[i]);
    }
 
    if (dirs_to_sync.empty())
-      dirs_to_sync.emplace_back(starting_dir);
+      dirs_to_sync.emplace_back(depot_root);
 
    print(white, "Starting sync with %d threads\n", num_threads);
    for (string dir: dirs_to_sync) // iterating by value intentionally
@@ -225,28 +249,6 @@ int main(int argc, char* argv[])
             {
                string output = p4cmd("p4 -s sync \"%s#head\"", *path);
                auto [first_line, rest] = split(output, "\n"sv);
-
-               //if (begins_with_nocase(*rest, "error: "))
-               //{
-               //   auto [prefix, body] = split(first_line, ": "sv);
-
-               //   if (begins_with_nocase(*body, "Can't clobber writable file"))
-               //   {
-               //      clobbered++;
-               //      print(yellow, "Clobbering file: %s...\n", *path);
-               //      p4cmd("p4 sync -f \"%s\"", *path);                  
-               //   }
-               //   else if (body.find("must resolve #head"))
-               //   {
-               //      add_needs_resolving(path);
-               //      print(red, "%s\n", *body);
-               //   }
-               //   else
-               //   {
-               //      errors++;
-               //      print(red, "%s\n", *body);
-               //   }
-               //}
                if (output.find("Can't clobber writable file") != string::npos)
                {
                   clobbered++;
@@ -256,7 +258,6 @@ int main(int argc, char* argv[])
                else if (output.find("must resolve #head") != string::npos)
                {
                   add_needs_resolving(path);
-                  //print(red, "%s\n", *body);
                   print(red, "conflict: %s\n", *path);
                }
                else if (size_t ierror=output.find("error: "); ierror!=string::npos)
