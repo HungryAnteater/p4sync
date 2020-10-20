@@ -1,2 +1,11 @@
-# file_tools
-Utility that shows all the largest files in a given directory or set of directories.  They are displayed as a sorted list of the largest N files.  A list of file extensions responsible for the largest amount of total space taken is also listed.
+# p4sync
+This is a simple p4 command line wrapper that aids in automatic p4 syncs.  It supports multi-threaded syncs.
+
+NOTE: It is up to the user to correctly configure P4's environment.
+
+# Syntax
+```sh
+p4sync [-threads=THREAD_COUNT] [DEPOT_PATH ...]
+```
+
+If no arguments are given, the entire depot is synced.
