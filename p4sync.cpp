@@ -216,7 +216,7 @@ int main(int argc, char* argv[])
    print(white, "Starting sync with %d threads\n", num_threads);
    for (string dir: dirs_to_sync) // iterating by value intentionally
    {
-      while (dir.back() == '/' || dir.back() == '.' || dir.back() == '*')
+      while (!dir.empty() && (dir.back() == '/' || dir.back() == '.' || dir.back() == '*'))
          dir.pop_back();
 
       print(white, "Syncing %s\n", *dir);
